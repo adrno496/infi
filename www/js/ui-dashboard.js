@@ -89,6 +89,7 @@ export function renderDashboard(root) {
   const wrong = Storage.wrongIds().length;
   root.appendChild(el("div", { class: "section-title" }, ["Accès rapides"]));
   root.appendChild(el("div", { class: "grid grid-2" }, [
+    quick("🤖", "Demander à l'IA", "Pose ta question", () => navigate("ia")),
     quick("🎯", "QCM express", "20 questions au hasard", () => navigate("entrainement", { mode: "qcmRandom" })),
     wrong ? quick("🩹", "Mes erreurs", `${wrong} à revoir`, () => navigate("entrainement", { mode: "errors" })) : quick("💉", "Calcul de dose", "Exercice à la volée", () => navigate("entrainement", { mode: "calcul" })),
     quick("🧰", "Boîte à outils", "Scores, normes, DAR…", () => navigate("outils")),
