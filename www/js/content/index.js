@@ -6,6 +6,10 @@ import { ueById } from "./referentiel.js";
 const PACK_FILES = [
   "transversal",
   "cas-cliniques",
+  "anatomie_plus",
+  "gestes_ide_plus",
+  "patho_plus",
+  "pharmaco_plus",
   "ue_1_1",
   "ue_1_1_plus",
   "ue_1_2",
@@ -34,22 +38,35 @@ const PACK_FILES = [
   "ue_2_10_plus",
   "ue_2_11",
   "ue_3_1",
+  "ue_3_1_plus",
   "ue_3_2",
+  "ue_3_2_plus",
   "ue_3_3",
+  "ue_3_3_plus",
   "ue_3_4",
+  "ue_3_4_plus",
   "ue_3_5",
   "ue_4_1",
+  "ue_4_1_plus",
   "ue_4_2",
+  "ue_4_2_plus",
   "ue_4_3",
+  "ue_4_3_plus",
   "ue_4_4",
+  "ue_4_4_plus",
   "ue_4_5",
+  "ue_4_5_plus",
   "ue_4_6",
+  "ue_4_6_plus",
   "ue_4_7",
   "ue_4_8",
   "ue_5_2",
   "ue_5_5",
+  "ue_5_5_plus",
   "ue_5_6",
   "ue_6_2",
+  "ue_6_2_plus",
+  "urgences_plus",
 ];
 
 let _cache = null;
@@ -75,8 +92,8 @@ export async function loadContent() {
   const h = (s) => { let x = 5381; const t = String(s || ""); for (let i = 0; i < t.length; i++) x = ((x << 5) + x) ^ t.charCodeAt(i); return (x >>> 0).toString(36); };
   const uniq = (list, makeId) => { const seen = new Set(); for (const it of list) { if (!it.id) { let id = makeId(it); while (seen.has(id)) id += "_b"; it.id = id; } seen.add(it.id); } };
   fiches.forEach((f, i) => { if (!f.id) f.id = "f_" + i; });
-  uniq(qcm, (q) => "q_" + (q.ueId || q.mod || "x") + "_" + h(q.q));
-  uniq(flashcards, (c) => "fc_" + (c.mod || c.ueId || "x") + "_" + h(c.recto));
+  uniq(qcm, (q) => "q_" + (q.ueId || q.mod || "x") + "_" + h(q.q + "||" + (q.options || []).join("|")));
+  uniq(flashcards, (c) => "fc_" + (c.mod || c.ueId || "x") + "_" + h(c.recto + "||" + (c.verso || "")));
   cas.forEach((c, i) => { if (!c.id) c.id = "cas_" + i; });
   _cache = { fiches, qcm, flashcards, cas };
   return _cache;

@@ -34,7 +34,7 @@ export function showOnboarding(opts = {}) {
               e.currentTarget.parentElement.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
               e.currentTarget.classList.add("active");
             },
-          }, [`${a}ʳᵉ année`.replace("1ʳᵉ", "1ʳᵉ").replace("2ʳᵉ", "2ᵉ").replace("3ʳᵉ", "3ᵉ")])
+          }, [["1ʳᵉ année", "2ᵉ année", "3ᵉ année"][a - 1]])
         )
       ),
     ]),

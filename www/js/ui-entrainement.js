@@ -25,7 +25,7 @@ function award(xp) {
 
 export function renderEntrainement(root, opts = {}) {
   switch (opts.mode) {
-    case "review": return startFlashcards(root);
+    case "review": return startFlashcards(root, opts.flashPool);
     case "qcmRandom": return startQcm(root, pickQcm(allQcm(), 20), { title: "QCM express" });
     case "calcul": return startCalcul(root);
     case "errors": return startErrors(root);
@@ -67,10 +67,12 @@ function modeCard(icon, title, sub, onclick) {
 }
 
 // Raccourcis clavier pendant un quiz : 1-9 / A-Z pour répondre, Entrée/Espace pour continuer.
-// Le handler s'auto-retire quand la zone n'est plus dans le DOM.
+// Un seul handler actif à la fois (retire le précédent) ; s'auto-retire quand la zone quitte le DOM.
+let _quizKeyHandler = null;
 function installQuizKeys(area) {
+  if (_quizKeyHandler) { document.removeEventListener("keydown", _quizKeyHandler); _quizKeyHandler = null; }
   const onKey = (e) => {
-    if (!document.body.contains(area)) { document.removeEventListener("keydown", onKey); return; }
+    if (!document.body.contains(area)) { document.removeEventListener("keydown", onKey); if (_quizKeyHandler === onKey) _quizKeyHandler = null; return; }
     if (document.querySelector(".modal-overlay")) return;
     const explain = area.querySelector(".explain");
     if (explain) {
@@ -84,6 +86,7 @@ function installQuizKeys(area) {
     else if (/^[a-z]$/i.test(e.key)) idx = e.key.toLowerCase().charCodeAt(0) - 97;
     if (idx >= 0 && idx < opts.length && !opts[idx].hasAttribute("disabled")) { e.preventDefault(); opts[idx].click(); }
   };
+  _quizKeyHandler = onKey;
   document.addEventListener("keydown", onKey);
 }
 
@@ -160,7 +163,7 @@ function startQcm(root, pool, { title = "QCM" } = {}) {
         else if (idx === chosen) b.classList.add("wrong");
         else b.classList.add("dim");
       });
-      area.appendChild(el("div", { class: "explain" }, [
+      area.appendChild(el("div", { class: "explain", "aria-live": "polite" }, [
         el("div", { class: `ex-verdict ${correct ? "" : ""}`, style: { color: correct ? "var(--good)" : "var(--bad)" } }, [correct ? "✅ Bonne réponse" : "❌ Mauvaise réponse"]),
         el("div", {}, [q.explication || ""]),
         q.ref ? el("div", { class: "ex-ref" }, ["Réf. : " + q.ref]) : null,

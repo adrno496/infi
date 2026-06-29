@@ -1,10 +1,12 @@
 // Panneau Cours : navigation Année → Semestre → UE → fiche, recherche, favoris, TTS, glossaire.
-import { el, toast, navigate } from "./app.js";
+import { el, toast, navigate, openModal, closeModal } from "./app.js";
 import { Storage } from "./storage.js";
 import { ANNEES, SEMESTRES, uesBySemestre, ueById, CHAMPS, champCouleur } from "./content/referentiel.js";
 import { fichesForUe, ueStats, searchFiches, allFiches, qcmForUe, flashcardsForUe, pickQcm } from "./content/index.js";
 import { lookup } from "./content/glossaire.js";
 import { speak, stopSpeech, isTtsAvailable } from "./tts.js";
+import { XP } from "./gamification.js";
+import { isAiEnabled, ask, Prompts } from "./ai-client.js";
 
 function header(root, title, sub, onBack) {
   root.appendChild(el("div", { class: "panel-head" }, [
@@ -132,7 +134,7 @@ function iconForType(t) { return t === "pharmaco" ? "💊" : t === "patho" ? "�
 function showFiche(root, f) {
   root.innerHTML = "";
   stopSpeech();
-  Storage.markRead(f.ueId, f.id);
+  if (Storage.markRead(f.ueId, f.id)) { Storage.touchActivity(); Storage.addXp(XP.ficheRead); }
 
   let fav = Storage.isFavorite(f.id);
   const favBtn = el("button", { class: "btn btn-secondary btn-sm", onclick: () => {
@@ -142,15 +144,24 @@ function showFiche(root, f) {
   } }, [fav ? "⭐ Favori" : "☆ Favori"]);
 
   let speaking = false;
-  const ttsBtn = isTtsAvailable() ? el("button", { class: "btn btn-secondary btn-sm", onclick: () => {
+  const ttsBtn = (isTtsAvailable() && Storage.getSettings().ttsEnabled) ? el("button", { class: "btn btn-secondary btn-sm", onclick: () => {
     if (speaking) { stopSpeech(); speaking = false; ttsBtn.innerHTML = "🔊 Écouter"; return; }
     const plain = f.titre + ". " + (f.html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
     speak(plain, Storage.getSettings().ttsRate || 1);
     speaking = true; ttsBtn.innerHTML = "⏹ Stop";
   } }, ["🔊 Écouter"]) : null;
 
+  const aiBtn = isAiEnabled() ? el("button", { class: "btn btn-secondary btn-sm", onclick: async () => {
+    aiBtn.setAttribute("disabled", ""); aiBtn.textContent = "…";
+    try {
+      const out = await ask(Prompts.explain(f.titre));
+      openModal(el("div", {}, [el("h3", {}, ["🤖 Explication"]), el("div", { class: "fiche", style: { whiteSpace: "pre-wrap" } }, [out]), el("button", { class: "btn btn-block mt", onclick: () => closeModal() }, ["Fermer"])]));
+    } catch (e) { toast(e.message, "error", 3500); }
+    finally { aiBtn.removeAttribute("disabled"); aiBtn.textContent = "🤖 Expliquer"; }
+  } }, ["🤖 Expliquer"]) : null;
+
   header(root, f.titre, null, () => { root.innerHTML = ""; showUe(root, f.ueId); });
-  root.appendChild(el("div", { class: "flex wrap mb", style: { gap: "8px" } }, [ueTag(f.ueId), favBtn, ttsBtn].filter(Boolean)));
+  root.appendChild(el("div", { class: "flex wrap mb", style: { gap: "8px" } }, [ueTag(f.ueId), favBtn, ttsBtn, aiBtn].filter(Boolean)));
 
   const body = el("div", { class: "card fiche", html: f.html || "" });
   root.appendChild(body);
@@ -177,12 +188,13 @@ function wireGlossary(container) {
       const entry = lookup(term);
       const old = document.getElementById("glossary-popup");
       if (old) old.remove();
-      const popup = el("div", { id: "glossary-popup", class: "glossary-popup" }, [
+      const popup = el("div", { id: "glossary-popup", class: "glossary-popup", role: "dialog", "aria-label": "Définition", tabindex: "-1" }, [
         el("div", { class: "gp-term" }, [entry ? entry.terme : term]),
         el("div", { class: "gp-def" }, [entry ? entry.def : "Définition à venir dans le glossaire."]),
         el("button", { class: "btn btn-ghost btn-sm", style: { marginTop: "8px" }, onclick: () => popup.remove() }, ["Fermer"]),
       ]);
       document.body.appendChild(popup);
+      try { popup.focus(); } catch {}
     });
   });
 }
