@@ -52,8 +52,8 @@ const DEFAULT_SETTINGS = {
   notifHour: 18,
   examTimerSec: 60,          // temps par question en mode examen
   aiEnabled: false,
-  aiProvider: "anthropic",
-  aiModel: "claude-haiku-4-5-20251001",
+  aiProvider: "mistral",        // mistral | anthropic
+  aiModel: "mistral-small-latest",
   aiKey: "",
   onboarded: false,
   promo: "",                 // ex. "2023-2026"

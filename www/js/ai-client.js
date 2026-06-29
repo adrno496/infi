@@ -1,5 +1,5 @@
 // Tuteur IA optionnel (désactivé par défaut). L'utilisateur fournit sa propre clé API (BYO key).
-// Appel direct à l'API Anthropic depuis le navigateur (clé personnelle, app perso).
+// Fournisseur par défaut : Mistral (https://console.mistral.ai). Anthropic reste disponible en option.
 import { Storage } from "./storage.js";
 
 export function isAiEnabled() {
@@ -12,9 +12,28 @@ Tu expliques de façon claire, structurée et fiable, en français, adaptée au 
 Tu restes dans le cadre de l'aide à la révision : tu rappelles que tes réponses ne remplacent pas les cours
 ni les protocoles officiels, et tu n'inventes jamais de posologie précise sans préciser de vérifier les sources.`;
 
-export async function ask(userPrompt, { maxTokens = 900 } = {}) {
-  const s = Storage.getSettings();
-  if (!isAiEnabled()) throw new Error("Le tuteur IA est désactivé. Active-le dans Réglages et ajoute ta clé API.");
+// ---- Mistral (La Plateforme) ----
+async function askMistral(s, userPrompt, maxTokens) {
+  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json", "Authorization": "Bearer " + s.aiKey },
+    body: JSON.stringify({
+      model: s.aiModel || "mistral-small-latest",
+      max_tokens: maxTokens,
+      temperature: 0.4,
+      messages: [{ role: "system", content: SYSTEM }, { role: "user", content: userPrompt }],
+    }),
+  });
+  if (!res.ok) {
+    let detail = ""; try { detail = (await res.json())?.message || (await res.text?.()) || ""; } catch {}
+    throw new Error(`Erreur Mistral (${res.status}). ${detail}`);
+  }
+  const data = await res.json();
+  return (data.choices?.[0]?.message?.content || "").trim() || "(réponse vide)";
+}
+
+// ---- Anthropic (Claude) ----
+async function askAnthropic(s, userPrompt, maxTokens) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -31,13 +50,17 @@ export async function ask(userPrompt, { maxTokens = 900 } = {}) {
     }),
   });
   if (!res.ok) {
-    let detail = "";
-    try { detail = (await res.json())?.error?.message || ""; } catch {}
+    let detail = ""; try { detail = (await res.json())?.error?.message || ""; } catch {}
     throw new Error(`Erreur API (${res.status}). ${detail}`);
   }
   const data = await res.json();
-  const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
-  return text || "(réponse vide)";
+  return (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n").trim() || "(réponse vide)";
+}
+
+export async function ask(userPrompt, { maxTokens = 900 } = {}) {
+  const s = Storage.getSettings();
+  if (!isAiEnabled()) throw new Error("Le tuteur IA est désactivé. Active-le dans Réglages et ajoute ta clé API.");
+  return s.aiProvider === "anthropic" ? askAnthropic(s, userPrompt, maxTokens) : askMistral(s, userPrompt, maxTokens);
 }
 
 export const Prompts = {

@@ -56,10 +56,15 @@ export function renderSettings(root) {
   // -------- Tuteur IA --------
   root.appendChild(el("div", { class: "section-title" }, ["Tuteur IA (optionnel)"]));
   root.appendChild(el("div", { class: "card" }, [
-    el("p", { class: "small muted" }, ["Désactivé par défaut. Avec ta propre clé API Anthropic, tu peux demander des explications, des QCM générés et un retour sur ton mémoire. La clé reste sur cet appareil."]),
+    el("p", { class: "small muted" }, ["Désactivé par défaut. Avec ta propre clé API (Mistral par défaut, ou Anthropic), tu peux demander des explications, des QCM générés et un retour sur ton mémoire. La clé reste sur cet appareil."]),
     toggleRow("Activer le tuteur IA", "Nécessite une clé API.", s.aiEnabled, (on) => Storage.saveSettings({ aiEnabled: on })),
-    inputRow("Clé API (Anthropic)", s.aiKey || "", "password", (v) => Storage.saveSettings({ aiKey: v.trim() }), "sk-ant-…"),
-    selectRow("Modèle", s.aiModel, [["claude-haiku-4-5-20251001", "Haiku (rapide, économique)"], ["claude-sonnet-4-6", "Sonnet (équilibré)"], ["claude-opus-4-8", "Opus (le plus capable)"]], (v) => Storage.saveSettings({ aiModel: v })),
+    selectRow("Fournisseur", s.aiProvider, [["mistral", "Mistral (par défaut)"], ["anthropic", "Anthropic (Claude)"]], (v) => { Storage.saveSettings({ aiProvider: v, aiModel: v === "anthropic" ? "claude-haiku-4-5-20251001" : "mistral-small-latest" }); navigate("settings"); }),
+    inputRow(s.aiProvider === "anthropic" ? "Clé API (Anthropic)" : "Clé API (Mistral)", s.aiKey || "", "password", (v) => Storage.saveSettings({ aiKey: v.trim() }), s.aiProvider === "anthropic" ? "sk-ant-…" : "clé Mistral…"),
+    selectRow("Modèle", s.aiModel, s.aiProvider === "anthropic"
+      ? [["claude-haiku-4-5-20251001", "Claude Haiku (rapide)"], ["claude-sonnet-4-6", "Claude Sonnet (équilibré)"], ["claude-opus-4-8", "Claude Opus (le + capable)"]]
+      : [["mistral-small-latest", "Mistral Small (rapide, éco)"], ["mistral-medium-latest", "Mistral Medium (équilibré)"], ["mistral-large-latest", "Mistral Large (le + capable)"]],
+      (v) => Storage.saveSettings({ aiModel: v })),
+    el("p", { class: "small muted", style: { marginTop: "10px" } }, ["Obtiens une clé sur console.mistral.ai. Note : l'appel se fait depuis le navigateur ; si le fournisseur bloque les requêtes navigateur (CORS), utilise un relais."]),
   ]));
 
   // -------- Données --------
