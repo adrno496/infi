@@ -5,6 +5,7 @@ import { installUpdateBanner } from "./a11y.js";
 import { shouldShowOnboarding, showOnboarding } from "./onboarding.js";
 import { maybeRemind } from "./notifications.js";
 import { loadContent } from "./content/index.js";
+import { initAutoSync } from "./sync.js";
 
 import { renderDashboard } from "./ui-dashboard.js";
 import { renderCours } from "./ui-cours.js";
@@ -147,6 +148,7 @@ async function bootstrap() {
   navigate("dashboard");
   if (shouldShowOnboarding()) setTimeout(() => showOnboarding({ onComplete: () => navigate("dashboard") }), 350);
   setTimeout(() => { try { maybeRemind(); } catch {} }, 1500);
+  setTimeout(() => { try { initAutoSync(); } catch {} }, 800);
 }
 
 if (typeof window !== "undefined") {
@@ -163,5 +165,7 @@ if (typeof window !== "undefined") {
     if (popup) { popup.remove(); return; }
     closeModal();
   });
+  // Données réimportées depuis le cloud → rafraîchir l'écran courant.
+  window.addEventListener("sync-updated", () => { try { navigate(getCurrentPanel()); } catch {} });
   window.Infi = { Storage, navigate, toast };
 }
