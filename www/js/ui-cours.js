@@ -1,8 +1,8 @@
 // Panneau Cours : navigation Année → Semestre → UE → fiche, recherche, favoris, TTS, glossaire.
-import { el, toast } from "./app.js";
+import { el, toast, navigate } from "./app.js";
 import { Storage } from "./storage.js";
 import { ANNEES, SEMESTRES, uesBySemestre, ueById, CHAMPS, champCouleur } from "./content/referentiel.js";
-import { fichesForUe, ueStats, searchFiches, allFiches } from "./content/index.js";
+import { fichesForUe, ueStats, searchFiches, allFiches, qcmForUe, flashcardsForUe, pickQcm } from "./content/index.js";
 import { lookup } from "./content/glossaire.js";
 import { speak, stopSpeech, isTtsAvailable } from "./tts.js";
 
@@ -96,6 +96,14 @@ function showUe(root, ueId) {
         el("span", { class: "badge badge-blue" }, [u.ects + " ECTS"]),
       ]),
     ]));
+  }
+  // Réviser directement cette UE
+  const nQcm = qcmForUe(ueId).length, nCards = flashcardsForUe(ueId).length;
+  if (nQcm || nCards) {
+    root.appendChild(el("div", { class: "flex", style: { gap: "8px", marginBottom: "12px" } }, [
+      nQcm ? el("button", { class: "btn btn-soft", style: { flex: "1" }, onclick: () => navigate("entrainement", { mode: "qcm", pool: pickQcm(qcmForUe(ueId), Math.min(20, nQcm)), title: "UE " + ueId }) }, [`🎯 QCM (${nQcm})`]) : null,
+      nCards ? el("button", { class: "btn btn-soft", style: { flex: "1" }, onclick: () => navigate("entrainement", { mode: "review", flashPool: flashcardsForUe(ueId) }) }, [`🔁 Cartes (${nCards})`]) : null,
+    ].filter(Boolean)));
   }
   const fiches = fichesForUe(ueId);
   if (!fiches.length) {

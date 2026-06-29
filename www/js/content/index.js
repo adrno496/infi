@@ -6,11 +6,49 @@ import { ueById } from "./referentiel.js";
 const PACK_FILES = [
   "transversal",
   "cas-cliniques",
-  "ue_1_1", "ue_1_2", "ue_1_3",
-  "ue_2_1", "ue_2_2", "ue_2_3", "ue_2_4", "ue_2_5", "ue_2_6", "ue_2_7", "ue_2_8", "ue_2_9", "ue_2_10", "ue_2_11",
-  "ue_3_1", "ue_3_2", "ue_3_3", "ue_3_4", "ue_3_5",
-  "ue_4_1", "ue_4_2", "ue_4_3", "ue_4_4", "ue_4_5", "ue_4_6", "ue_4_7", "ue_4_8",
-  "ue_5_2", "ue_5_5", "ue_5_6",
+  "ue_1_1",
+  "ue_1_1_plus",
+  "ue_1_2",
+  "ue_1_2_plus",
+  "ue_1_3",
+  "ue_1_3_plus",
+  "ue_2_1",
+  "ue_2_1_plus",
+  "ue_2_2",
+  "ue_2_2_plus",
+  "ue_2_3",
+  "ue_2_3_plus",
+  "ue_2_4",
+  "ue_2_4_plus",
+  "ue_2_5",
+  "ue_2_5_plus",
+  "ue_2_6",
+  "ue_2_6_plus",
+  "ue_2_7",
+  "ue_2_7_plus",
+  "ue_2_8",
+  "ue_2_8_plus",
+  "ue_2_9",
+  "ue_2_9_plus",
+  "ue_2_10",
+  "ue_2_10_plus",
+  "ue_2_11",
+  "ue_3_1",
+  "ue_3_2",
+  "ue_3_3",
+  "ue_3_4",
+  "ue_3_5",
+  "ue_4_1",
+  "ue_4_2",
+  "ue_4_3",
+  "ue_4_4",
+  "ue_4_5",
+  "ue_4_6",
+  "ue_4_7",
+  "ue_4_8",
+  "ue_5_2",
+  "ue_5_5",
+  "ue_5_6",
   "ue_6_2",
 ];
 
@@ -33,9 +71,12 @@ export async function loadContent() {
     if (Array.isArray(m.flashcards)) flashcards.push(...m.flashcards);
     if (Array.isArray(m.cas)) cas.push(...m.cas);
   }
+  // IDs stables basés sur le contenu (résistent à l'ajout de packs → SRS et « mes erreurs » préservés).
+  const h = (s) => { let x = 5381; const t = String(s || ""); for (let i = 0; i < t.length; i++) x = ((x << 5) + x) ^ t.charCodeAt(i); return (x >>> 0).toString(36); };
+  const uniq = (list, makeId) => { const seen = new Set(); for (const it of list) { if (!it.id) { let id = makeId(it); while (seen.has(id)) id += "_b"; it.id = id; } seen.add(it.id); } };
   fiches.forEach((f, i) => { if (!f.id) f.id = "f_" + i; });
-  qcm.forEach((q, i) => { if (!q.id) q.id = "q_" + i; });
-  flashcards.forEach((c, i) => { if (!c.id) c.id = "fc_" + i; });
+  uniq(qcm, (q) => "q_" + (q.ueId || q.mod || "x") + "_" + h(q.q));
+  uniq(flashcards, (c) => "fc_" + (c.mod || c.ueId || "x") + "_" + h(c.recto));
   cas.forEach((c, i) => { if (!c.id) c.id = "cas_" + i; });
   _cache = { fiches, qcm, flashcards, cas };
   return _cache;

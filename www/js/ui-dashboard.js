@@ -56,10 +56,11 @@ export function renderDashboard(root) {
   ]));
 
   // Accès rapides
+  const wrong = Storage.wrongIds().length;
   root.appendChild(el("div", { class: "section-title" }, ["Accès rapides"]));
   root.appendChild(el("div", { class: "grid grid-2" }, [
     quick("🎯", "QCM express", "20 questions au hasard", () => navigate("entrainement", { mode: "qcmRandom" })),
-    quick("💉", "Calcul de dose", "Exercice à la volée", () => navigate("entrainement", { mode: "calcul" })),
+    wrong ? quick("🩹", "Mes erreurs", `${wrong} à revoir`, () => navigate("entrainement", { mode: "errors" })) : quick("💉", "Calcul de dose", "Exercice à la volée", () => navigate("entrainement", { mode: "calcul" })),
     quick("🧰", "Boîte à outils", "Scores, normes, DAR…", () => navigate("outils")),
     quick("🎓", "Mon mémoire", "Méthodologie TFE", () => navigate("tfe")),
   ]));
