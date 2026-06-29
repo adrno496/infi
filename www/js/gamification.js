@@ -29,6 +29,8 @@ export const ACHIEVEMENTS = [
   { id: "fiches_100",  icon: "🎓", title: "Tête bien faite",    desc: "100 fiches lues.",                      check: (p) => p.fichesRead >= 100 },
   { id: "tfe_start",   icon: "📖", title: "Cap sur le mémoire", desc: "Commencer le module TFE.",              check: () => { const t = Storage.getTfe(); return Object.keys(t.steps || {}).length >= 1; } },
   { id: "tfe_half",    icon: "✍️", title: "Mémoire en marche",  desc: "Remplir 5 étapes du TFE.",              check: () => { const t = Storage.getTfe(); return Object.values(t.steps || {}).filter(Boolean).length >= 5; } },
+  { id: "lexique_25",  icon: "📖", title: "Lexique en marche",  desc: "25 termes débloqués.",                  check: () => Storage.getDiscovered().length >= 25 },
+  { id: "lexique_pro", icon: "📚", title: "Lexicographe",       desc: "60 termes débloqués.",                  check: () => Storage.getDiscovered().length >= 60 },
 ];
 
 // Évalue les succès et débloque les nouveaux. Retourne la liste des nouveaux succès.

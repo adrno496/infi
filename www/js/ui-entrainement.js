@@ -6,6 +6,7 @@ import { XP, checkAchievements } from "./gamification.js";
 import { allQcm, qcmForSemestre, qcmForUe, allFlashcards, allCas, pickQcm } from "./content/index.js";
 import { ANNEES, SEMESTRES, uesBySemestre, ueById } from "./content/referentiel.js";
 import { generate, checkAnswer, TYPES } from "./content/calculs.js";
+import { findTermsInText } from "./content/glossaire.js";
 import { confettiBurst } from "./confetti.js";
 
 function header(root, title, sub, onBack) {
@@ -156,6 +157,7 @@ function startQcm(root, pool, { title = "QCM" } = {}) {
       if (correct) score++;
       Storage.recordQcm(q.ueId, correct);
       if (correct) Storage.clearWrong(q.id); else Storage.markWrong(q.id);
+      Storage.discoverTerms(findTermsInText([q.q, ...(q.options || []), q.explication].join(" ")));
       award(correct ? XP.qcmCorrect : XP.qcmWrong);
       [...opts.children].forEach((b, idx) => {
         b.setAttribute("disabled", "");
