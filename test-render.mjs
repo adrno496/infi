@@ -67,9 +67,11 @@ const tfe = await import("./www/js/ui-tfe.js");
 const outils = await import("./www/js/ui-outils.js");
 const prof = await import("./www/js/ui-profile.js");
 const settings = await import("./www/js/ui-settings.js");
+const planner = await import("./www/js/ui-planner.js");
 
 console.log("\nRendu des panneaux :");
 run("Dashboard", (r) => dash.renderDashboard(r));
+run("Planning", (r) => planner.renderPlanner(r));
 run("Cours (accueil)", (r) => cours.renderCours(r));
 run("Cours (UE 2.2)", (r) => cours.renderCours(r, { ueId: "2.2" }));
 run("Cours (fiche)", (r) => cours.renderCours(r, { ficheId: "f_henderson" }));

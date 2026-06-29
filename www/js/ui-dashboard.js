@@ -2,7 +2,9 @@
 import { el, navigate } from "./app.js";
 import { Storage, levelFromXp } from "./storage.js";
 import { getWeeklyQuests } from "./gamification.js";
-import { allFlashcards } from "./content/index.js";
+import { allFlashcards, qcmForUe, pickQcm } from "./content/index.js";
+import { ueById } from "./content/referentiel.js";
+import { daysUntil } from "./ui-planner.js";
 
 function greeting() {
   const h = new Date().getHours();
@@ -37,6 +39,34 @@ export function renderDashboard(root) {
     el("button", { class: "btn", onclick: () => navigate("entrainement", { mode: "review" }) }, [toReview > 0 ? "Réviser maintenant →" : "Réviser quand même"]),
   ]));
 
+  // Compte à rebours de la prochaine échéance
+  const next = Storage.nextExam();
+  if (next) {
+    const d = daysUntil(next.date);
+    root.appendChild(el("button", { class: "card card-link mt", style: { marginTop: "12px", display: "block", width: "100%", textAlign: "left", borderColor: d <= 7 ? "var(--bad)" : "var(--border)" }, onclick: () => navigate("planner") }, [
+      el("div", { class: "flex-between" }, [
+        el("div", {}, [el("div", { class: "card-title", style: { fontSize: "0.95rem" } }, [`🗓️ ${next.label}`]), el("div", { class: "card-sub small" }, [next.date])]),
+        el("div", { style: { textAlign: "right" } }, [el("div", { style: { fontSize: "1.6rem", fontWeight: "800", color: d <= 7 ? "var(--bad)" : "var(--accent-strong)", lineHeight: "1" } }, [d <= 0 ? "🎯" : "J-" + d]), el("div", { class: "small muted" }, [d === 0 ? "aujourd'hui" : d < 0 ? "passé" : "à réviser"])]),
+      ]),
+    ]));
+  }
+
+  // À réviser en priorité (points faibles)
+  const weak = Storage.weakAreas().slice(0, 3);
+  if (weak.length) {
+    root.appendChild(el("div", { class: "section-title" }, ["À réviser en priorité"]));
+    const wWrap = el("div", { class: "list" });
+    weak.forEach((a) => {
+      const u = ueById(a.id); const n = qcmForUe(a.id).length;
+      wWrap.appendChild(el("button", { class: "row", onclick: () => n ? navigate("entrainement", { mode: "qcm", pool: pickQcm(qcmForUe(a.id), Math.min(15, n)), title: "UE " + a.id }) : navigate("planner") }, [
+        el("span", { class: "row-ic" }, ["🎯"]),
+        el("span", { class: "row-main" }, [el("div", { class: "row-title", style: { fontSize: "0.9rem" } }, [u ? u.titre : "UE " + a.id]), el("div", { class: "row-sub" }, [`Maîtrise ${a.mastery}%${a.wrong ? ` · ${a.wrong} erreur${a.wrong > 1 ? "s" : ""}` : ""}`])]),
+        el("span", { class: "row-chev" }, ["›"]),
+      ]));
+    });
+    root.appendChild(wWrap);
+  }
+
   // Niveau + XP
   root.appendChild(el("div", { class: "card mt", style: { marginTop: "12px" } }, [
     el("div", { class: "flex-between mb" }, [
@@ -62,6 +92,7 @@ export function renderDashboard(root) {
     quick("🎯", "QCM express", "20 questions au hasard", () => navigate("entrainement", { mode: "qcmRandom" })),
     wrong ? quick("🩹", "Mes erreurs", `${wrong} à revoir`, () => navigate("entrainement", { mode: "errors" })) : quick("💉", "Calcul de dose", "Exercice à la volée", () => navigate("entrainement", { mode: "calcul" })),
     quick("🧰", "Boîte à outils", "Scores, normes, DAR…", () => navigate("outils")),
+    quick("🗓️", "Planning", "Examens & priorités", () => navigate("planner")),
     quick("🎓", "Mon mémoire", "Méthodologie TFE", () => navigate("tfe")),
   ]));
 

@@ -1,9 +1,10 @@
 // Panneau Mémoire / TFE : parcours guidé pas-à-pas, timeline, rédaction sauvegardée, prépa soutenance.
-import { el, toast, openModal, closeModal } from "./app.js";
+import { el, toast, openModal, closeModal, navigate } from "./app.js";
 import { Storage } from "./storage.js";
 import { TFE_STEPS, JURY_QUESTIONS, RESSOURCES } from "./content/tfe.js";
 import { XP, checkAchievements } from "./gamification.js";
 import { isAiEnabled, ask, Prompts } from "./ai-client.js";
+import { allFiches } from "./content/index.js";
 
 function isDone(id) { const s = Storage.getTfe().steps || {}; return !!(s[id] && String(s[id]).trim().length > 20); }
 
@@ -27,6 +28,19 @@ function showOverview(root) {
     el("div", { class: "progress" }, [el("span", { style: { width: pct + "%" } })]),
     el("div", { class: "small muted", style: { marginTop: "6px" } }, [pct === 100 ? "Bravo, toutes les étapes sont remplies ! 🎉" : "Remplis chaque étape à ton rythme."]),
   ]));
+
+  // Méthodologie des épreuves (transversal)
+  const meth = allFiches().filter((f) => /^meth_/.test(f.id));
+  if (meth.length) {
+    root.appendChild(el("div", { class: "section-title" }, ["📐 Méthodologie des épreuves"]));
+    const m = el("div", { class: "list" });
+    meth.forEach((f) => m.appendChild(el("button", { class: "row", onclick: () => navigate("cours", { ficheId: f.id }) }, [
+      el("span", { class: "row-ic" }, ["📐"]),
+      el("span", { class: "row-main" }, [el("div", { class: "row-title", style: { fontSize: "0.9rem" } }, [f.titre.replace(/^Méthode\s*:\s*/i, "")]), el("div", { class: "row-sub" }, [f.resume || ""])]),
+      el("span", { class: "row-chev" }, ["›"]),
+    ])));
+    root.appendChild(m);
+  }
 
   // Stepper
   const stepper = el("div", { class: "stepper card" });
